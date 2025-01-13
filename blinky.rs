@@ -3,9 +3,8 @@
 
 use panic_halt as _;
 use rp2040_hal as hal;
-use hal::{pac, sio::Sio, gpio::{Pin, FunctionPwm, Output, PushPull}, clocks::init_clocks_and_plls, watchdog::Watchdog};
+use hal::{pac, sio::Sio, gpio::{Pin, Output, PushPull}, timer::Delay};
 use embedded_time::duration::Milliseconds;
-use embedded_time::rate::{Hertz, 1.hz};
 
 const LED_R_PIN: u8 = 13; // GPIO do LED vermelho
 const LED_G_PIN: u8 = 11; // GPIO do LED verde
@@ -24,7 +23,7 @@ fn main() -> ! {
     let pac = pac::Peripherals::take().unwrap();
     let sio = Sio::new(pac.SIO);
     let pins = hal::gpio::Pins::new(pac.IO_BANK0, pac.PADS_BANK0, sio.gpio_bank0);
-    let delay = hal::timer::Delay::new(pac.TIMER, pac.RESETS);
+    let delay = Delay::new(pac.TIMER, pac.RESETS);
 
     let mut led_red = pins.gpio13.into_push_pull_output();
     let mut led_green = pins.gpio11.into_push_pull_output();
@@ -67,7 +66,7 @@ fn sinalizar(
     led_blue: &mut Pin<Output>,
     buzzer_1: &mut Pin<Output>,
     buzzer_2: &mut Pin<Output>,
-    delay: &hal::timer::Delay,
+    delay: &Delay,
 ) {
     set_color(use_red, use_green, use_blue, led_red, led_green, led_blue);
 
@@ -88,7 +87,7 @@ fn envia_sos(
     led_blue: &mut Pin<Output>,
     buzzer_1: &mut Pin<Output>,
     buzzer_2: &mut Pin<Output>,
-    delay: &hal::timer::Delay,
+    delay: &Delay,
 ) {
     // Envia 3 pontos (S) com vermelho
     for _ in 0..3 {
