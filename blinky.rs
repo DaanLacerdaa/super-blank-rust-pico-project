@@ -12,18 +12,19 @@ const LED_B_PIN: u8 = 12; // GPIO do LED azul
 const BUZZER_PIN_1: u8 = 10; // GPIO do buzzer 1
 const BUZZER_PIN_2: u8 = 21; // GPIO do buzzer 2
 
-const PONTO: u32 = 200; // Duração do ponto
-const TRACO: u32 = 800; // Duração do traço
-const TEMPO_GAP: u32 = 125; // Gap entre os sinais
-const INTERVALO: u32 = 250; // Intervalo entre os grupos de letras
-const CICLO: u32 = 3000; // Intervalo total do ciclo SOS
+const PONTO: u32 = 200;
+const TRACO: u32 = 800;
+const TEMPO_GAP: u32 = 125;
+const INTERVALO: u32 = 250;
+const CICLO: u32 = 3000;
 
 #[rp2040_hal::entry]
 fn main() -> ! {
     let pac = pac::Peripherals::take().unwrap();
     let sio = Sio::new(pac.SIO);
-    let pins = hal::gpio::Pins::new(pac.IO_BANK0, pac.PADS_BANK0, sio.gpio_bank0);
-    let delay = Delay::new(pac.TIMER, pac.RESETS);
+    let resets = pac.RESETS;
+    let pins = hal::gpio::Pins::new(pac.IO_BANK0, pac.PADS_BANK0, sio.gpio_bank0, &mut resets);
+    let delay = Delay::new(pac.TIMER, &resets);
 
     let mut led_red = pins.gpio13.into_push_pull_output();
     let mut led_green = pins.gpio11.into_push_pull_output();
@@ -47,9 +48,9 @@ fn set_color(
     red_on: bool,
     green_on: bool,
     blue_on: bool,
-    led_red: &mut Pin<Output>,
-    led_green: &mut Pin<Output>,
-    led_blue: &mut Pin<Output>,
+    led_red: &mut Pin<Output<PushPull>>,
+    led_green: &mut Pin<Output<PushPull>>,
+    led_blue: &mut Pin<Output<PushPull>>,
 ) {
     led_red.set_state(red_on);
     led_green.set_state(green_on);
@@ -61,11 +62,11 @@ fn sinalizar(
     use_red: bool,
     use_green: bool,
     use_blue: bool,
-    led_red: &mut Pin<Output>,
-    led_green: &mut Pin<Output>,
-    led_blue: &mut Pin<Output>,
-    buzzer_1: &mut Pin<Output>,
-    buzzer_2: &mut Pin<Output>,
+    led_red: &mut Pin<Output<PushPull>>,
+    led_green: &mut Pin<Output<PushPull>>,
+    led_blue: &mut Pin<Output<PushPull>>,
+    buzzer_1: &mut Pin<Output<PushPull>>,
+    buzzer_2: &mut Pin<Output<PushPull>>,
     delay: &Delay,
 ) {
     set_color(use_red, use_green, use_blue, led_red, led_green, led_blue);
@@ -82,11 +83,11 @@ fn sinalizar(
 }
 
 fn envia_sos(
-    led_red: &mut Pin<Output>,
-    led_green: &mut Pin<Output>,
-    led_blue: &mut Pin<Output>,
-    buzzer_1: &mut Pin<Output>,
-    buzzer_2: &mut Pin<Output>,
+    led_red: &mut Pin<Output<PushPull>>,
+    led_green: &mut Pin<Output<PushPull>>,
+    led_blue: &mut Pin<Output<PushPull>>,
+    buzzer_1: &mut Pin<Output<PushPull>>,
+    buzzer_2: &mut Pin<Output<PushPull>>,
     delay: &Delay,
 ) {
     // Envia 3 pontos (S) com vermelho
