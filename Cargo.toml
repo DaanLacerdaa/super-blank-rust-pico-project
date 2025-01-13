@@ -5,7 +5,7 @@ edition = "2021" # Recomendado para projetos atuais
 
 [dependencies]
 rp2040-hal = "0.7.0"
-rtic = "2.1.2"
+rtic = { version = "2.1.2", features = ["cortex-m"] }  # Habilite o backend `cortex-m`
 panic-halt = "0.2.0"
 embedded-hal = { version = "0.2.5", features = ["unproven"] }
 cortex-m = "0.7.2"
@@ -13,24 +13,19 @@ cortex-m-rt = "0.7"
 rp2040-boot2 = "0.2.1"
 embedded-time = "0.12.1"
 defmt = { version = "0.3.10" }
-cortex-m-rtic = "1.1.4"
 
 [build-dependencies]
-cortex-m-rtic = "1.1.4"
+cortex-m-rtic = "0.5.8"
 
 [target.thumbv6m-none-eabi]
-# Ferramenta para executar o código no chip
 runner = "probe-run --chip RP2040"
 
 [profile.dev]
-# Otimizações específicas para depuração
 opt-level = "z"
 
 [profile.release]
-# Otimizações para binários de produção
 opt-level = "s"
 
 [[bin]]
-# Configuração para o binário principal
 name = "blinky"
-path = "blinky.rs"
+path = "blink.rs"
