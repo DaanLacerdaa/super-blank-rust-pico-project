@@ -5,17 +5,18 @@ edition = "2021" # Recomendado para projetos atuais
 
 [dependencies]
 rp2040-hal = "0.7.0"
-rtic = "2.1.2"  # Remova a feature 'rtic-macros', ou use uma versão que não precise dessa feature
+rtic = { version = "2.1.2", features = ["rtic-macros", "critical-section"] }
 panic-halt = "0.2.0"
 embedded-hal = { version = "0.2.5", features = ["unproven"] }
 cortex-m = "0.7.2"
 cortex-m-rt = "0.7"
 rp2040-boot2 = "0.2.1"
 embedded-time = "0.12.1"
-defmt = { version = "0.3.10" }
+defmt = { version = "0.3.10", features = ["rtic"] }
 
 [build-dependencies]
 cortex-m-rtic = "0.5.8"
+
 
 
 
