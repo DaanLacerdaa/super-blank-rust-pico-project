@@ -12,11 +12,11 @@ const LED_B_PIN: u8 = 12; // GPIO do LED azul
 const BUZZER_PIN_1: u8 = 10; // GPIO do buzzer 1
 const BUZZER_PIN_2: u8 = 21; // GPIO do buzzer 2
 
-const PONTO: u32 = 200;
-const TRACO: u32 = 800;
-const TEMPO_GAP: u32 = 125;
-const INTERVALO: u32 = 250;
-const CICLO: u32 = 3000;
+const PONTO: u32 = 200; // Duração do ponto
+const TRACO: u32 = 800; // Duração do traço
+const TEMPO_GAP: u32 = 125; // Gap entre os sinais
+const INTERVALO: u32 = 250; // Intervalo entre os grupos de letras
+const CICLO: u32 = 3000; // Intervalo total do ciclo SOS
 
 #[rp2040_hal::entry]
 fn main() -> ! {
