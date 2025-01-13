@@ -1,113 +1,106 @@
 #![no_std]
 #![no_main]
 
-use panic_halt as _;
-use rp2040_hal as hal;
-use hal::{pac, sio::Sio, gpio::{Pin, Output, PushPull}, timer::Delay};
-use embedded_time::duration::Milliseconds;
+use cortex_m::delay::Delay;
+use rp2040_hal::{
+    pac,
+    sio::Sio,
+    gpio::{Pin, Output, PushPull},
+    timer::Timer,
+    watchdog::Watchdog,
+};
+use embedded_hal::digital::v2::OutputPin;
+use panic_halt as _; // Panic handler
 
-const LED_R_PIN: u8 = 13; // GPIO do LED vermelho
-const LED_G_PIN: u8 = 11; // GPIO do LED verde
-const LED_B_PIN: u8 = 12; // GPIO do LED azul
-const BUZZER_PIN_1: u8 = 10; // GPIO do buzzer 1
-const BUZZER_PIN_2: u8 = 21; // GPIO do buzzer 2
+#[rtic::app(device = rp2040_hal::pac, peripherals = true)]
+mod app {
+    use super::*;
 
-const PONTO: u32 = 200;
-const TRACO: u32 = 800;
-const TEMPO_GAP: u32 = 125;
-const INTERVALO: u32 = 250;
-const CICLO: u32 = 3000;
+    #[shared]
+    struct Shared {}
 
-#[rp2040_hal::entry]
-fn main() -> ! {
-    let pac = pac::Peripherals::take().unwrap();
-    let sio = Sio::new(pac.SIO);
-    let resets = pac.RESETS;
-    let pins = hal::gpio::Pins::new(pac.IO_BANK0, pac.PADS_BANK0, sio.gpio_bank0, &mut resets);
-    let delay = Delay::new(pac.TIMER, &resets);
-
-    let mut led_red = pins.gpio13.into_push_pull_output();
-    let mut led_green = pins.gpio11.into_push_pull_output();
-    let mut led_blue = pins.gpio12.into_push_pull_output();
-    let mut buzzer_1 = pins.gpio10.into_push_pull_output();
-    let mut buzzer_2 = pins.gpio21.into_push_pull_output();
-
-    loop {
-        envia_sos(
-            &mut led_red,
-            &mut led_green,
-            &mut led_blue,
-            &mut buzzer_1,
-            &mut buzzer_2,
-            &delay,
-        );
-    }
-}
-
-fn set_color(
-    red_on: bool,
-    green_on: bool,
-    blue_on: bool,
-    led_red: &mut Pin<Output<PushPull>>,
-    led_green: &mut Pin<Output<PushPull>>,
-    led_blue: &mut Pin<Output<PushPull>>,
-) {
-    led_red.set_state(red_on);
-    led_green.set_state(green_on);
-    led_blue.set_state(blue_on);
-}
-
-fn sinalizar(
-    duration: u32,
-    use_red: bool,
-    use_green: bool,
-    use_blue: bool,
-    led_red: &mut Pin<Output<PushPull>>,
-    led_green: &mut Pin<Output<PushPull>>,
-    led_blue: &mut Pin<Output<PushPull>>,
-    buzzer_1: &mut Pin<Output<PushPull>>,
-    buzzer_2: &mut Pin<Output<PushPull>>,
-    delay: &Delay,
-) {
-    set_color(use_red, use_green, use_blue, led_red, led_green, led_blue);
-
-    buzzer_1.set_high();
-    buzzer_2.set_high();
-    delay.delay_ms(Milliseconds(duration as u32));
-
-    set_color(false, false, false, led_red, led_green, led_blue);
-    buzzer_1.set_low();
-    buzzer_2.set_low();
-
-    delay.delay_ms(Milliseconds(TEMPO_GAP as u32));
-}
-
-fn envia_sos(
-    led_red: &mut Pin<Output<PushPull>>,
-    led_green: &mut Pin<Output<PushPull>>,
-    led_blue: &mut Pin<Output<PushPull>>,
-    buzzer_1: &mut Pin<Output<PushPull>>,
-    buzzer_2: &mut Pin<Output<PushPull>>,
-    delay: &Delay,
-) {
-    // Envia 3 pontos (S) com vermelho
-    for _ in 0..3 {
-        sinalizar(PONTO, true, false, false, led_red, led_green, led_blue, buzzer_1, buzzer_2, delay);
+    #[local]
+    struct Local {
+        led_red: Pin<Output<PushPull>>,
+        led_green: Pin<Output<PushPull>>,
+        led_blue: Pin<Output<PushPull>>,
+        buzzer_1: Pin<Output<PushPull>>,
+        buzzer_2: Pin<Output<PushPull>>,
+        delay: Delay,
     }
 
-    delay.delay_ms(Milliseconds(INTERVALO as u32));
+    #[init]
+    fn init(ctx: init::Context) -> (Shared, Local) {
+        // Inicialização do hardware
+        let mut pac = ctx.device;
+        let mut sio = Sio::new(pac.SIO);
+        let mut watchdog = Watchdog::new(pac.WATCHDOG);
 
-    // Envia 3 traços (O) com verde
-    for _ in 0..3 {
-        sinalizar(TRACO, false, true, false, led_red, led_green, led_blue, buzzer_1, buzzer_2, delay);
+        // Inicializa o Timer
+        let timer = Timer::new(pac.TIMER);
+        let delay = Delay::new(ctx.core.SYST, &mut pac.CLK_SYS);
+
+        // Configuração dos pinos de LEDs e buzzer
+        let gpio = pac.GPIO;
+        let mut led_red = gpio.get_pin(13).into_push_pull_output();
+        let mut led_green = gpio.get_pin(14).into_push_pull_output();
+        let mut led_blue = gpio.get_pin(15).into_push_pull_output();
+        let mut buzzer_1 = gpio.get_pin(16).into_push_pull_output();
+        let mut buzzer_2 = gpio.get_pin(17).into_push_pull_output();
+
+        // Inicializa LEDs e buzzer
+        led_red.set_low().ok();
+        led_green.set_low().ok();
+        led_blue.set_low().ok();
+        buzzer_1.set_low().ok();
+        buzzer_2.set_low().ok();
+
+        // Retorna o contexto com as variáveis locais
+        (
+            Shared {},
+            Local {
+                led_red,
+                led_green,
+                led_blue,
+                buzzer_1,
+                buzzer_2,
+                delay,
+            },
+        )
     }
 
-    delay.delay_ms(Milliseconds(INTERVALO as u32));
+    #[task(local = [led_red, led_green, led_blue, buzzer_1, buzzer_2, delay])]
+    fn blink(ctx: blink::Context) {
+        // Exemplo de alternância simples entre LEDs
+        let delay = &mut ctx.local.delay;
+        
+        ctx.local.led_red.set_high().ok();
+        ctx.local.led_green.set_low().ok();
+        ctx.local.led_blue.set_low().ok();
+        delay.delay_ms(500_u16);
 
-    // Envia 3 pontos (S) com vermelho
-    for _ in 0..3 {
-        sinalizar(PONTO, true, false, false, led_red, led_green, led_blue, buzzer_1, buzzer_2, delay);
+        ctx.local.led_red.set_low().ok();
+        ctx.local.led_green.set_high().ok();
+        ctx.local.led_blue.set_low().ok();
+        delay.delay_ms(500_u16);
+
+        ctx.local.led_red.set_low().ok();
+        ctx.local.led_green.set_low().ok();
+        ctx.local.led_blue.set_high().ok();
+        delay.delay_ms(500_u16);
     }
 
-    delay.delay_ms(Milliseconds(CICLO as u32));
+    #[task(local = [buzzer_1, buzzer_2, delay])]
+    fn buzz(ctx: buzz::Context) {
+        // Exemplo de controle simples dos buzzers
+        let delay = &mut ctx.local.delay;
+
+        ctx.local.buzzer_1.set_high().ok();
+        ctx.local.buzzer_2.set_low().ok();
+        delay.delay_ms(1000_u16);
+
+        ctx.local.buzzer_1.set_low().ok();
+        ctx.local.buzzer_2.set_high().ok();
+        delay.delay_ms(1000_u16);
+    }
 }
