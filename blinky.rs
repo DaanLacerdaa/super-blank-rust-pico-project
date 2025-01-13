@@ -1,67 +1,113 @@
 #![no_std]
 #![no_main]
 
-use embedded_hal::digital::v2::OutputPin;
 use panic_halt as _;
-
 use rp2040_hal as hal;
-use hal::{
-    clocks::{init_clocks_and_plls, Clock},
-    gpio::{bank0::Gpio25, PushPullOutput},
-    pac,
-    sio::Sio,
-    watchdog::Watchdog,
-};
-use cortex_m_rt::entry;
-use embedded_time::rate::*;
+use hal::{pac, sio::Sio, gpio::{Pin, FunctionPwm, Output, PushPull}, clocks::init_clocks_and_plls, watchdog::Watchdog};
+use embedded_time::duration::Milliseconds;
+use embedded_time::rate::{Hertz, 1.hz};
 
-#[entry]
+const LED_R_PIN: u8 = 13; // GPIO do LED vermelho
+const LED_G_PIN: u8 = 11; // GPIO do LED verde
+const LED_B_PIN: u8 = 12; // GPIO do LED azul
+const BUZZER_PIN_1: u8 = 10; // GPIO do buzzer 1
+const BUZZER_PIN_2: u8 = 21; // GPIO do buzzer 2
+
+const PONTO: u32 = 200;
+const TRACO: u32 = 800;
+const TEMPO_GAP: u32 = 125;
+const INTERVALO: u32 = 250;
+const CICLO: u32 = 3000;
+
+#[rp2040_hal::entry]
 fn main() -> ! {
-    // Obtenha os periféricos
-    let mut pac = pac::Peripherals::take().unwrap();
-    let mut watchdog = Watchdog::new(pac.WATCHDOG);
+    let pac = pac::Peripherals::take().unwrap();
     let sio = Sio::new(pac.SIO);
+    let pins = hal::gpio::Pins::new(pac.IO_BANK0, pac.PADS_BANK0, sio.gpio_bank0);
+    let delay = hal::timer::Delay::new(pac.TIMER, pac.RESETS);
 
-    // Frequência do cristal externo
-    let external_xtal_freq_hz = 12_000_000u32;
-
-    // Configure os clocks
-    let clocks = init_clocks_and_plls(
-        external_xtal_freq_hz,
-        pac.XOSC,
-        pac.CLOCKS,
-        pac.PLL_SYS,
-        pac.PLL_USB,
-        &mut pac.RESETS,
-        &mut watchdog,
-    )
-    .ok()
-    .unwrap();
-
-    // Configuração do pino GPIO
-    let pins = hal::gpio::Pins::new(
-        pac.IO_BANK0,
-        pac.PADS_BANK0,
-        sio.gpio_bank0,
-        &mut pac.RESETS,
-    );
-
-    let mut led = pins.gpio25.into_push_pull_output();
-
-    // Configure o delay usando o clock
-    let system_clock_hz = clocks.system_clock.freq().to_Hz();
-    let mut delay = cortex_m::delay::Delay::new(
-        cortex_m::Peripherals::take().unwrap().SYST,
-        system_clock_hz,
-    );
+    let mut led_red = pins.gpio13.into_push_pull_output();
+    let mut led_green = pins.gpio11.into_push_pull_output();
+    let mut led_blue = pins.gpio12.into_push_pull_output();
+    let mut buzzer_1 = pins.gpio10.into_push_pull_output();
+    let mut buzzer_2 = pins.gpio21.into_push_pull_output();
 
     loop {
-        // Acenda o LED
-        led.set_high().unwrap();
-        delay.delay_ms(500);
-
-        // Apague o LED
-        led.set_low().unwrap();
-        delay.delay_ms(500);
+        envia_sos(
+            &mut led_red,
+            &mut led_green,
+            &mut led_blue,
+            &mut buzzer_1,
+            &mut buzzer_2,
+            &delay,
+        );
     }
+}
+
+fn set_color(
+    red_on: bool,
+    green_on: bool,
+    blue_on: bool,
+    led_red: &mut Pin<Output>,
+    led_green: &mut Pin<Output>,
+    led_blue: &mut Pin<Output>,
+) {
+    led_red.set_state(red_on);
+    led_green.set_state(green_on);
+    led_blue.set_state(blue_on);
+}
+
+fn sinalizar(
+    duration: u32,
+    use_red: bool,
+    use_green: bool,
+    use_blue: bool,
+    led_red: &mut Pin<Output>,
+    led_green: &mut Pin<Output>,
+    led_blue: &mut Pin<Output>,
+    buzzer_1: &mut Pin<Output>,
+    buzzer_2: &mut Pin<Output>,
+    delay: &hal::timer::Delay,
+) {
+    set_color(use_red, use_green, use_blue, led_red, led_green, led_blue);
+
+    buzzer_1.set_high();
+    buzzer_2.set_high();
+    delay.delay_ms(Milliseconds(duration as u32));
+
+    set_color(false, false, false, led_red, led_green, led_blue);
+    buzzer_1.set_low();
+    buzzer_2.set_low();
+
+    delay.delay_ms(Milliseconds(TEMPO_GAP as u32));
+}
+
+fn envia_sos(
+    led_red: &mut Pin<Output>,
+    led_green: &mut Pin<Output>,
+    led_blue: &mut Pin<Output>,
+    buzzer_1: &mut Pin<Output>,
+    buzzer_2: &mut Pin<Output>,
+    delay: &hal::timer::Delay,
+) {
+    // Envia 3 pontos (S) com vermelho
+    for _ in 0..3 {
+        sinalizar(PONTO, true, false, false, led_red, led_green, led_blue, buzzer_1, buzzer_2, delay);
+    }
+
+    delay.delay_ms(Milliseconds(INTERVALO as u32));
+
+    // Envia 3 traços (O) com verde
+    for _ in 0..3 {
+        sinalizar(TRACO, false, true, false, led_red, led_green, led_blue, buzzer_1, buzzer_2, delay);
+    }
+
+    delay.delay_ms(Milliseconds(INTERVALO as u32));
+
+    // Envia 3 pontos (S) com vermelho
+    for _ in 0..3 {
+        sinalizar(PONTO, true, false, false, led_red, led_green, led_blue, buzzer_1, buzzer_2, delay);
+    }
+
+    delay.delay_ms(Milliseconds(CICLO as u32));
 }
