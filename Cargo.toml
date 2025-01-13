@@ -13,9 +13,10 @@ cortex-m-rt = "0.7"
 rp2040-boot2 = "0.2.1"
 embedded-time = "0.12.1"
 defmt = { version = "0.3.10" }
+cortex-m-rtic = "1.1.4"
 
 [build-dependencies]
-cortex-m-rtic = "0.5.8"
+cortex-m-rtic = "1.1.4"
 
 [target.thumbv6m-none-eabi]
 # Ferramenta para executar o código no chip
