@@ -5,7 +5,7 @@ edition = "2021" # Recomendado para projetos atuais
 
 [dependencies]
 rp2040-hal = "0.7.0"
-rtic = { version = "2.1.2", features = ["cortex-m"] }
+rtic = "2.1.2"
 panic-halt = "0.2.0"
 embedded-hal = { version = "0.2.5", features = ["unproven"] }
 cortex-m = "0.7.2"
@@ -32,4 +32,4 @@ opt-level = "s"
 [[bin]]
 # Configuração para o binário principal
 name = "blinky"
-path = "blink.rs"
+path = "blinky.rs"
