@@ -1,29 +1,26 @@
 [package]
-name = "super-blank-project"
-version = "0.2.0"
-edition = "2021"
-readme = "README.md"
+name = "rp2040-blink-buzz"
+version = "0.1.0"
+edition = "2021"  # Definindo a edição do Rust como 2021
 
 [dependencies]
-rp2040-hal = "0.11.0"
-rtic = { version = "2.1.2", features = ["cortex-m"] }
-panic-halt = "1.0.0"
-embedded-hal = "1.0.0"
-cortex-m = { version = "0.7.6", features = ["critical-section-single-core"] }
-cortex-m-rt = "0.7"
-cortex-m-semihosting = "0.5"
-rp2040-boot2 = "0.2.1"
-embedded-time = "0.12.1"
-defmt = { version = "0.3.10" }
+cortex-m = "0.7.6"
+embedded-hal = "0.2.6"
+panic-halt = "0.2.0"
+rp2040-hal = "0.7.0"  # Versão correta do rp2040-hal
 
-[target.thumbv6m-none-eabi]
-runner = "probe-run --chip RP2040"
-
-[profile.dev]
-opt-level = "z"
+[build-dependencies]
+cortex-m-rt = "0.7.0"
 
 [profile.release]
+codegen-units = 1
+debug = true
+lto = true
 opt-level = "s"
+
+[package.metadata]
+cargo-generate = { template = "https://github.com/rp-rs/rp2040-project-template" }
+
 
 [[bin]]
 name = "blinky"
