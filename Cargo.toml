@@ -1,6 +1,11 @@
+[package]
+name = "super-blank-project"
+version = "0.2.0"
+edition = "2021" # Recomendado para projetos atuais
+
 [dependencies]
 rp2040-hal = "0.7.0"
-rtic = { version = "2.0.0", features = ["rtic-macros"] }  # Certifique-se de usar a feature correta
+rtic = { version = "2.1.2", features = ["rtic-macros"] }  # Certifique-se de que a feature rtic-macros esteja ativada
 panic-halt = "0.2.0"
 embedded-hal = { version = "0.2.5", features = ["unproven"] }
 cortex-m = "0.7.2"
@@ -11,3 +16,22 @@ defmt = { version = "0.3", features = ["rtic"] }
 
 [build-dependencies]
 cortex-m-rtic = "0.5.8"
+
+
+[target.thumbv6m-none-eabi]
+# Ferramenta para executar o código no chip
+runner = "probe-run --chip RP2040"
+
+[profile.dev]
+# Otimizações específicas para depuração
+opt-level = "z"
+
+[profile.release]
+# Otimizações para binários de produção
+opt-level = "s"
+
+
+[[bin]]
+# Configuração para o binário principal
+name = "blinky"
+path = "blinky.rs"
