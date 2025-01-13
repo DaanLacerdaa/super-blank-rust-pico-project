@@ -7,6 +7,8 @@ edition = "2021" # Recomendado para projetos atuais
 # HAL para Raspberry Pi Pico
 rp2040-hal = "0.7.0"
 
+rtic = "2.0.0"  # ou a versão compatível
+
 # Gerenciador de panics para dispositivos embarcados
 panic-halt = "0.2.0"
 
@@ -38,6 +40,7 @@ opt-level = "z"
 [profile.release]
 # Otimizações para binários de produção
 opt-level = "s"
+
 
 [[bin]]
 # Configuração para o binário principal
