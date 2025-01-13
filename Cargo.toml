@@ -4,19 +4,19 @@ version = "0.2.0"
 edition = "2021"
 
 [dependencies]
-rp2040-hal = "0.7.0"
+rp2040-hal = "0.11.0"
 rtic = { version = "2.1.2", features = ["cortex-m"] }
+rtic-macros = { version = "2.1.2", features = ["cortex-m-basepri"] }
 panic-halt = "0.2.0"
-embedded-hal = { version = "0.2.5", features = ["unproven"] }
+embedded-hal = { version = "1.0.0", features = ["unproven"] }
 cortex-m = "0.7.2"
 cortex-m-rt = "0.7"
 rp2040-boot2 = "0.2.1"
 embedded-time = "0.12.1"
 defmt = { version = "0.3.10" }
 
-
 [build-dependencies]
-cortex-m-rtic = "0.5.8"
+cortex-m-rtic = { version = "0.5.8" }
 
 [target.thumbv6m-none-eabi]
 runner = "probe-run --chip RP2040"
@@ -29,4 +29,4 @@ opt-level = "s"
 
 [[bin]]
 name = "blinky"
-path = "src/blink.rs"
+path = "blink.rs"
